@@ -1,11 +1,13 @@
 global:
   scrape_interval: 5s
+
 scrape_configs:
   - job_name: "demo-python-app"
     static_configs:
       - targets: ["demo-app:8000"]
+
 remote_write:
-  - url: "https://prometheus-d4ca26.es.us-central1.gcp.elastic.cloud/_prometheus/api/v1/write"
+  - url: "https://YOUR_ES_ENDPOINT/_prometheus/api/v1/write"
     authorization:
       type: ApiKey
-      credentials: d2EwRzFKMEJKZnJDc1F1M3dMVlk6d2Ezb0FaNlBIZGozZlZEMXBGZ1o2QQ==
+      credentials: YOUR_API_KEY
