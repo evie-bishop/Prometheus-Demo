@@ -1,0 +1,17 @@
+prometheus.scrape "demo_app" {
+  targets = [
+    {
+      __address__ = "demo-app:8000",
+      job = "demo-python-app",
+    },
+  ]
+  forward_to = [prometheus.remote_write.elastic.receiver]
+}
+prometheus.remote_write "elastic" {
+  endpoint {
+    url = "https://YOUR_ES_ENDPOINT/_prometheus/api/v1/write"
+    headers = {
+      Authorization = "ApiKey YOUR_API_KEY",
+    }
+  }
+}
