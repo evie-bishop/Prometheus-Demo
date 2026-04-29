@@ -31,10 +31,12 @@ Prometheus-Demo/
 ```
 
 Prerequisites
+```text
 Docker Desktop
 Elastic deployment with Prometheus remote write support
 Kibana access
 API key with write access to metrics-*
+```
 
 
 Configure Prometheus
