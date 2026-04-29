@@ -9,6 +9,8 @@ This demo shows:
 
 ## Project structure
 
+
+```text
 Prometheus-Demo/
   app/
     app.py
@@ -22,6 +24,7 @@ Prometheus-Demo/
   Dockerfile
   docker-compose.yml
   README.md
+```
 
 ## Preqs
 Docker Desktop
