@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  demo-app:
+    build: .
+    container_name: demo-metrics-app
+    ports:
+      - "8000:8000"
+  prometheus:
+    image: prom/prometheus
+    container_name: demo-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - demo-app

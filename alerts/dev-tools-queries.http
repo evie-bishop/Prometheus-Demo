@@ -1,0 +1,24 @@
+# Validate alert condition: any errors detected
+POST /_query
+{
+  "query": """
+  PROMQL step=60 metric_value=(sum(rate(demo_errors_total[5m])))
+  | WHERE metric_value > 0
+  """
+}
+# Validate alert condition: queue depth high
+POST /_query
+{
+  "query": """
+  PROMQL step=60 metric_value=(max(demo_queue_depth))
+  | WHERE metric_value > 40
+  """
+}
+# Validate alert condition: CPU temperature high
+POST /_query
+{
+  "query": """
+  PROMQL step=60 metric_value=(max(demo_cpu_temp_celsius))
+  | WHERE metric_value > 75
+  """
+}
