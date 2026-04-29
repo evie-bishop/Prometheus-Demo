@@ -8,7 +8,7 @@ This demo shows:
 - alert queries packaged for reuse
 
 ## Project structure
-```text
+
 Prometheus-Demo/
   app/
     app.py
