@@ -8,6 +8,8 @@ This demo shows:
 - alert queries packaged for reuse
 
 ## Project structure
+
+
 ```text
 Prometheus-Demo/
   app/
@@ -22,6 +24,7 @@ Prometheus-Demo/
   Dockerfile
   docker-compose.yml
   README.md
+```
 
 ## Preqs
 Docker Desktop
@@ -32,6 +35,7 @@ API key with write access to metrics-*
 ## Confirgure Prometheus
 Edit prometheus/prometheus.yml and set your Elasticsearch endpoint and API key:
 
+```text
 global:
   scrape_interval: 5s
 
@@ -45,19 +49,26 @@ remote_write:
     authorization:
       type: ApiKey
       credentials: YOUR_API_KEY
+```
 
 ## Run the Demo
 From the project root:
 
+```text
 docker compose up --build
+```
 
 ## Verify
 App:
+```text
 http://localhost:8000/
 http://localhost:8000/metrics
+```
 
 Prometheus:
+```text
 http://localhost:9090
+```
 In Prometheus, check Status > Targets and confirm the app target is UP.
 
 Verify in Kibana
@@ -68,24 +79,29 @@ Try:
 TS metrics-*
 
 Example PromQL queries:
-
-✄𐘗sql code block:✄𐘗
+```text
 PROMQL demo_active_users
 PROMQL demo_cpu_temp_celsius
 PROMQL sum(rate(demo_requests_total[1m]))
 PROMQL sum by (status) (rate(demo_requests_total[1m]))
 PROMQL sum by (endpoint) (rate(demo_errors_total[5m]))
 PROMQL demo_queue_depth
+```
 
 ## Dashboard
 Import the saved object from:
+```text
 saved-objects/prometheus-remote-write-demo-dashboard.ndjson
+```
 
 ## Alerts
 Alert queries are packaged in:
+```text
 alerts/dev-tools-queries.http
+```
 
 Example alert conditions:
+```text
 PROMQL step=60 metric_value=(sum(rate(demo_errors_total[5m])))
 | WHERE metric_value > 0
 
@@ -94,9 +110,12 @@ PROMQL step=60 metric_value=(max(demo_queue_depth))
 
 PROMQL step=60 metric_value=(max(demo_cpu_temp_celsius))
 | WHERE metric_value > 75
+```
 
 ## Stop the demo
+```text
 docker compose down
+```
 
 
 
