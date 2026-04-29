@@ -11,3 +11,4 @@ remote_write:
     authorization:
       type: ApiKey
       credentials: YOUR_API_KEY
+
