@@ -6,6 +6,7 @@ prometheus.scrape "demo_app" {
     },
   ]
   scrape_interval = sys.env("PROMETHEUS_SCRAPE_INTERVAL")
+  scrape_timeout  = sys.env("PROMETHEUS_SCRAPE_INTERVAL")
   forward_to      = [prometheus.remote_write.elastic.receiver]
 }
 prometheus.remote_write "elastic" {
