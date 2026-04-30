@@ -1,17 +1,22 @@
 prometheus.scrape "demo_app" {
   targets = [
     {
-      __address__ = "demo-app:8000",
-      job = "demo-python-app",
+      __address__ = sys.env("APP_TARGET"),
+      job         = sys.env("SCRAPE_JOB_NAME"),
     },
   ]
-  forward_to = [prometheus.remote_write.elastic.receiver]
+  scrape_interval = sys.env("PROMETHEUS_SCRAPE_INTERVAL")
+  scrape_timeout  = sys.env("PROMETHEUS_SCRAPE_INTERVAL")
+  forward_to      = [prometheus.remote_write.elastic.receiver]
 }
 prometheus.remote_write "elastic" {
   endpoint {
-    url = "https://YOUR_ES_ENDPOINT/_prometheus/api/v1/write"
+    url = sys.env("ES_ENDPOINT") + "/_prometheus/api/v1/write"
     headers = {
-      Authorization = "ApiKey YOUR_API_KEY",
+      Authorization = "ApiKey " + sys.env("ES_API_KEY"),
     }
+  }
+  external_labels = {
+    collector = "alloy",
   }
 }

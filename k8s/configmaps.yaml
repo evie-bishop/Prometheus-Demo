@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-shared-config
+data:
+  APP_INTERNAL_PORT: "8000"
+  APP_HOST: "0.0.0.0"
+  SCRAPE_JOB_NAME: "demo-python-app"
+  PROMETHEUS_SCRAPE_INTERVAL: "5s"
+  APP_TARGET: "demo-app:8000"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml.tmpl: |
+    global:
+      scrape_interval: __SCRAPE_INTERVAL__
+      external_labels:
+        collector: prometheus
+    scrape_configs:
+      - job_name: "__SCRAPE_JOB_NAME__"
+        static_configs:
+          - targets: ["__APP_TARGET__"]
+    remote_write:
+      - url: "__ES_ENDPOINT__/_prometheus/api/v1/write"
+        authorization:
+          type: ApiKey
+          credentials: __ES_API_KEY__
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-config
+data:
+  config.alloy: |
+    prometheus.scrape "demo_app" {
+      targets = [
+        {
+          __address__ = sys.env("APP_TARGET"),
+          job         = sys.env("SCRAPE_JOB_NAME"),
+        },
+      ]
+      scrape_interval = sys.env("PROMETHEUS_SCRAPE_INTERVAL")
+      scrape_timeout  = sys.env("PROMETHEUS_SCRAPE_INTERVAL")
+      forward_to      = [prometheus.remote_write.elastic.receiver]
+    }
+    prometheus.remote_write "elastic" {
+      endpoint {
+        url = sys.env("ES_ENDPOINT") + "/_prometheus/api/v1/write"
+        headers = {
+          Authorization = "ApiKey " + sys.env("ES_API_KEY"),
+        }
+      }
+      external_labels = {
+        collector = "alloy",
+      }
+    }

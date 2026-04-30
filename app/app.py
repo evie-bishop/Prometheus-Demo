@@ -1,3 +1,4 @@
+import os
 import random
 import time
 import threading
@@ -65,4 +66,4 @@ def metrics():
 if __name__ == "__main__":
     thread = threading.Thread(target=background_metric_updates, daemon=True)
     thread.start()
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host=os.environ.get("APP_HOST", "0.0.0.0"), port=int(os.environ.get("APP_INTERNAL_PORT", "8000")))
