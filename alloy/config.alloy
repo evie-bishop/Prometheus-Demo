@@ -5,7 +5,8 @@ prometheus.scrape "demo_app" {
       job         = sys.env("SCRAPE_JOB_NAME"),
     },
   ]
-  forward_to = [prometheus.remote_write.elastic.receiver]
+  scrape_interval = sys.env("PROMETHEUS_SCRAPE_INTERVAL")
+  forward_to      = [prometheus.remote_write.elastic.receiver]
 }
 prometheus.remote_write "elastic" {
   endpoint {
@@ -13,5 +14,8 @@ prometheus.remote_write "elastic" {
     headers = {
       Authorization = "ApiKey " + sys.env("ES_API_KEY"),
     }
+  }
+  external_labels = {
+    collector = "alloy",
   }
 }

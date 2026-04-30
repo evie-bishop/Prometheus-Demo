@@ -1,5 +1,7 @@
 global:
   scrape_interval: __SCRAPE_INTERVAL__
+  external_labels:
+    collector: prometheus
 scrape_configs:
   - job_name: "__SCRAPE_JOB_NAME__"
     static_configs:
