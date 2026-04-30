@@ -1,27 +1,59 @@
 services:
   demo-app:
-    build: .
-    container_name: demo-metrics-app
+    build:
+      context: .
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE}
+    container_name: ${APP_CONTAINER_NAME}
+    environment:
+      APP_INTERNAL_PORT: ${APP_INTERNAL_PORT}
     ports:
-      - "8000:8000"
+      - "${APP_PORT}:${APP_INTERNAL_PORT}"
   prometheus:
-    image: prom/prometheus
-    container_name: demo-prometheus
+    image: ${PROMETHEUS_IMAGE}
+    container_name: ${PROMETHEUS_CONTAINER_NAME}
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT}:9090"
+    environment:
+      ES_ENDPOINT: ${ES_ENDPOINT}
+      ES_API_KEY: ${ES_API_KEY}
+      SCRAPE_JOB_NAME: ${SCRAPE_JOB_NAME}
+      APP_CONTAINER_NAME: ${APP_CONTAINER_NAME}
+      APP_INTERNAL_PORT: ${APP_INTERNAL_PORT}
+      PROMETHEUS_SCRAPE_INTERVAL: ${PROMETHEUS_SCRAPE_INTERVAL}
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml.tmpl:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        sed -e "s|__ES_ENDPOINT__|$$ES_ENDPOINT|g" \
+            -e "s|__ES_API_KEY__|$$ES_API_KEY|g" \
+            -e "s|__SCRAPE_JOB_NAME__|$$SCRAPE_JOB_NAME|g" \
+            -e "s|__APP_TARGET__|$$APP_CONTAINER_NAME:$$APP_INTERNAL_PORT|g" \
+            -e "s|__SCRAPE_INTERVAL__|$$PROMETHEUS_SCRAPE_INTERVAL|g" \
+            /etc/prometheus/prometheus.yml.tmpl > /tmp/prometheus.yml && \
+        exec /bin/prometheus \
+          --config.file=/tmp/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --web.console.libraries=/usr/share/prometheus/console_libraries \
+          --web.console.templates=/usr/share/prometheus/consoles
     depends_on:
       - demo-app
     profiles:
       - prometheus
   alloy:
-    image: grafana/alloy:latest
-    container_name: demo-alloy
+    image: ${ALLOY_IMAGE}
+    container_name: ${ALLOY_CONTAINER_NAME}
     ports:
-      - "12345:12345"
+      - "${ALLOY_PORT}:12345"
+    environment:
+      ES_ENDPOINT: ${ES_ENDPOINT}
+      ES_API_KEY: ${ES_API_KEY}
+      SCRAPE_JOB_NAME: ${SCRAPE_JOB_NAME}
+      APP_TARGET: ${APP_CONTAINER_NAME}:${APP_INTERNAL_PORT}
     volumes:
-      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
     command: ["run", "/etc/alloy/config.alloy"]
     depends_on:
       - demo-app

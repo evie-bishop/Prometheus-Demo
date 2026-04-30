@@ -27,10 +27,12 @@ Prometheus-Demo/
     prometheus-remote-write-demo-dashboard.ndjson
   Dockerfile
   docker-compose.yml
+  .env.example
   README.md
 ```
 
 Prerequisites
+
 ```text
 Docker Desktop
 Elastic deployment with Prometheus remote write support
@@ -38,88 +40,85 @@ Kibana access
 API key with write access to metrics-*
 ```
 
+Configuration
 
-Configure Prometheus
-Edit prometheus/prometheus.yml and set your Elasticsearch endpoint and API key:
+All runtime configuration is driven from `.env`. Image versions, ports,
+container names, and the Elasticsearch endpoint/API key are pinned there.
+`.env.example` is the canonical template - change defaults via PR. Local
+secrets go in `.env` (gitignored).
 
-```text
-global:
-  scrape_interval: 5s
-
-scrape_configs:
-  - job_name: "demo-python-app"
-    static_configs:
-      - targets: ["demo-app:8000"]
-
-remote_write:
-  - url: "https://YOUR_ES_ENDPOINT/_prometheus/api/v1/write"
-    authorization:
-      type: ApiKey
-      credentials: YOUR_API_KEY
+```bash
+cp .env.example .env
+# edit .env and set ES_ENDPOINT and ES_API_KEY
 ```
 
-
-Configure Alloy
-Edit alloy/config.alloy and set your Elasticsearch endpoint and API key:
+Pinned defaults (change via PR to `.env.example`):
 
 ```text
-prometheus.scrape "demo_app" {
-  targets = [
-    {
-      __address__ = "demo-app:8000",
-      job         = "demo-python-app-alloy",
-    },
-  ]
-
-  forward_to = [prometheus.remote_write.elastic.receiver]
-}
-
-prometheus.remote_write "elastic" {
-  endpoint {
-    url = "https://YOUR_ES_ENDPOINT/_prometheus/api/v1/write"
-
-    headers = {
-      Authorization = "Api Key YOUR_API_KEY",
-    }
-  }
-}
+PYTHON_IMAGE=python:3.14-slim
+PROMETHEUS_IMAGE=prom/prometheus:v3.11.3
+ALLOY_IMAGE=grafana/alloy:v1.16.0
 ```
+
+Python package versions are pinned in `app/requirements.txt`
+(flask 3.1.3, prometheus_client 0.25.0).
+
+How configs consume env vars:
+
+- `alloy/config.alloy` reads `ES_ENDPOINT`, `ES_API_KEY`, `APP_TARGET`,
+  and `SCRAPE_JOB_NAME` natively via `sys.env(...)`.
+- `prometheus/prometheus.yml` is a template containing `__PLACEHOLDER__`
+  tokens. The compose entrypoint renders it to `/tmp/prometheus.yml`
+  with `sed` at container start.
 
 Run the demo
-Prometheus ingestion path
-```text
-docker compose --profile prometheus up --build
+
+By default `.env` sets `COMPOSE_PROFILES=prometheus,alloy`, so both ingestion
+paths come up together:
+
+```bash
+docker compose up --build
 ```
 
-Alloy ingestion path
-```text
-docker compose --profile alloy up --build
+To run just one path, override the profile on the command line:
+
+```bash
+docker compose --profile prometheus up --build   # Prometheus only
+docker compose --profile alloy up --build        # Alloy only
 ```
+
+Note: with both profiles active the same app metrics are written to
+Elasticsearch twice - once via Prometheus (`job=demo-python-app`) and once
+via Alloy (whatever `SCRAPE_JOB_NAME` is set to). That's intentional for
+the demo comparison; pick a single profile if you want a single write path.
 
 Verify
+
 App:
+
 ```text
 http://localhost:8000/
 http://localhost:8000/metrics
 ```
 
 Prometheus:
+
 ```text
 http://localhost:9090
 ```
 
 Alloy:
+
 ```text
 http://localhost:12345
 ```
 
-Prometheus mode
-In Prometheus, check Status > Targets and confirm the app target is UP.
+Prometheus mode: in Prometheus, check Status > Targets and confirm the app
+target is UP.
 
-Alloy mode
-Check the Alloy logs:
+Alloy mode: check the Alloy logs:
 
-```text
+```bash
 docker logs demo-alloy
 ```
 
@@ -130,11 +129,13 @@ prometheus.remote_write.elastic
 Verify in Kibana
 Set the time range to Last 15 minutes or Last 1 hour.
 Try:
+
 ```text
 TS metrics-*
 ```
 
 Example PromQL queries:
+
 ```text
 PROMQL demo_active_users
 PROMQL demo_cpu_temp_celsius
@@ -145,23 +146,27 @@ PROMQL demo_queue_depth
 ```
 
 To prove Alloy is scraping without Prometheus, use:
+
 ```text
 PROMQL sum by (job) (rate(demo_requests_total[1m]))
 ```
 
 Dashboard
 Import the saved object from:
+
 ```text
 saved-objects/prometheus-remote-write-demo-dashboard.ndjson
 ```
 
 Alerts
 Alert queries are packaged in:
+
 ```text
 alerts/dev-tools-queries.http
 ```
 
 Example alert conditions:
+
 ```text
 PROMQL step=60 metric_value=(sum(rate(demo_errors_total[5m])))
 | WHERE metric_value > 0
@@ -174,15 +179,7 @@ PROMQL step=60 metric_value=(max(demo_cpu_temp_celsius))
 ```
 
 Stop the demo
-```text
+
+```bash
 docker compose down
 ```
-
-
-
-
-
-
-
-
-
